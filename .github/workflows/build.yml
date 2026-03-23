@@ -25,3 +25,4 @@ jobs:
             -Dsonar.organization=meiryleneavelino
             -Dsonar.sources=source
             -Dsonar.java.binaries=.
+# Forçando novo scan
