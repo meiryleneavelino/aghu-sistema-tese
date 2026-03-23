@@ -23,6 +23,7 @@ jobs:
           args: >
             -Dsonar.projectKey=meiryleneavelino_aghu-sistema-tese
             -Dsonar.organization=meiryleneavelino
-            -Dsonar.sources=source
+            -Dsonar.sources=.
             -Dsonar.java.binaries=.
-# Forçando novo scan
+            -Dsonar.sourceEncoding=UTF-8
+            -Dsonar.exclusions=**/test/**,**/target/**,**/.github/**
