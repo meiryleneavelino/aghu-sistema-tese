@@ -1,7 +1,9 @@
 name: SonarCloud
 on:
   push:
-    branches: [master, main]
+    branches:
+      - master
+      - main
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -10,30 +12,28 @@ jobs:
     name: SonarCloud
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4 # Atualizado para v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: SonarCloud Scan
-        # Usando a nova action recomendada pelo log
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          # 6GB de RAM e G1GC para aguentar o tranco do AGHU
           SONAR_SCANNER_OPTS: >
             -Xmx6g 
             -XX:+UseG1GC 
             -XX:MaxGCPauseMillis=200 
-            -XX:ParallelGCThreads=2 
-            -Djava.awt.headless=true
+            -XX:ParallelGCThreads=2
         with:
           args: >
             -Dsonar.projectKey=meiryleneavelino_aghu-sistema-tese
             -Dsonar.organization=meiryleneavelino
-            -Dsonar.sources=.
-            -Dsonar.inclusions=6x/aplicacao/aghu_jee/aghu-core/**
+            -Dsonar.sources=6x/aplicacao/aghu_jee
             -Dsonar.java.binaries=.
             -Dsonar.sourceEncoding=UTF-8
-            -Dsonar.exclusions=**/test/**,**/target/**,**/.github/**,**/*.xhtml,**/aghu-entidades/**,**/dependencias/**,**/banco-dados/**
+            -Dsonar.exclusions=**/test/**,**/target/**,**/.github/**,**/*.xhtml,**/aghu-entidades/**,**/banco-dados/**,**/dependencias/**
             -Dsonar.java.dataflow.activated=false
             -Dsonar.cpd.exclusions=**/*
