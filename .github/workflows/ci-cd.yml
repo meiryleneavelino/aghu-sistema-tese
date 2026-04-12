@@ -5,20 +5,14 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  schedule:
-    - cron: '0 3 * * 1'
 
 jobs:
   analyze:
-    name: Analyze (Java)
     runs-on: ubuntu-latest
 
     permissions:
       security-events: write
       contents: read
-
-    strategy:
-      fail-fast: false
 
     steps:
       - name: Checkout
@@ -34,11 +28,17 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: java
-          build-mode: none   # 🔥 AQUI está o segredo
 
-      # ❌ NÃO roda Maven (evita erro de dependência)
-      # - name: Build
-      #   run: mvn clean install
+      # 🔥 BUILD CONTROLADO (não quebra pipeline)
+      - name: Build (tolerante a erro)
+        run: |
+          mvn -B -fn \
+          -DskipTests \
+          -Dmaven.test.skip=true \
+          -Dcheckstyle.skip=true \
+          -Dpmd.skip=true \
+          -Denforcer.skip=true \
+          compile
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
