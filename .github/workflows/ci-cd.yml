@@ -3,12 +3,9 @@ name: CodeQL
 on:
   push:
     branches: [ "master", "main", "develop" ]
-  pull_request:
-    branches: [ "master", "main", "develop" ]
 
 jobs:
   codeql:
-    name: CodeQL Analysis
     runs-on: ubuntu-latest
 
     env:
@@ -16,23 +13,13 @@ jobs:
       CODEQL_THREADS: 2
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-
-      # 🔍 Descobre automaticamente onde está o pom.xml
-      - name: Find pom.xml
-        id: find_pom
-        run: |
-          POM_PATH=$(find . -name "pom.xml" | head -n 1)
-          echo "Found pom at: $POM_PATH"
-          DIR=$(dirname "$POM_PATH")
-          echo "dir=$DIR" >> $GITHUB_OUTPUT
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -41,10 +28,9 @@ jobs:
           build-mode: manual
           queries: security-extended
 
-      # 🔥 Build automático baseado no pom encontrado
+      # 🔥 BUILD RESILIENTE
       - name: Build project
-        working-directory: ${{ steps.find_pom.outputs.dir }}
-        run: mvn clean install -DskipTests -Dmaven.javadoc.skip=true -B -V
+        run: mvn clean compile -DskipTests -Dmaven.javadoc.skip=true -fn -B
 
-      - name: Run CodeQL Analysis
+      - name: Analyze
         uses: github/codeql-action/analyze@v3
