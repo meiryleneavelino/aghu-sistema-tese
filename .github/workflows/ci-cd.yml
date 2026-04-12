@@ -2,12 +2,13 @@ name: CodeQL
 
 on:
   push:
-    branches: [ "master"]
+    branches: [ "master", "main", "develop" ]
   pull_request:
-    branches: [ "master"]
+    branches: [ "master", "main", "develop" ]
 
 jobs:
   codeql:
+    name: CodeQL Analysis
     runs-on: ubuntu-latest
 
     env:
@@ -24,27 +25,26 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      # 🔍 Descobre automaticamente onde está o pom.xml
+      - name: Find pom.xml
+        id: find_pom
+        run: |
+          POM_PATH=$(find . -name "pom.xml" | head -n 1)
+          echo "Found pom at: $POM_PATH"
+          DIR=$(dirname "$POM_PATH")
+          echo "dir=$DIR" >> $GITHUB_OUTPUT
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: java
           build-mode: manual
           queries: security-extended
-          config: |
-            paths:
-              - 6x/aplicacao/aghu_jee
-            paths-ignore:
-              - '**/test/**'
-              - '**/target/**'
-              - '**/.github/**'
-              - '**/aghu-entidades/**'
-              - '**/banco-dados/**'
-              - '**/dependencias/**'
 
-      
-      - name: Build (multi-module)
-        working-directory: 6x/aplicacao/aghu-core/
-        run: mvn clean install -DskipTests -Dmaven.javadoc.skip=true
+      # 🔥 Build automático baseado no pom encontrado
+      - name: Build project
+        working-directory: ${{ steps.find_pom.outputs.dir }}
+        run: mvn clean install -DskipTests -Dmaven.javadoc.skip=true -B -V
 
-      - name: Run CodeQL
+      - name: Run CodeQL Analysis
         uses: github/codeql-action/analyze@v3
