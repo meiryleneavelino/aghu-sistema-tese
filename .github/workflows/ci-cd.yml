@@ -43,8 +43,8 @@ jobs:
 
       
       - name: Build (multi-module)
-        working-directory: 6x/aplicacao/aghu_jee
-        run: mvn clean compile -DskipTests
+        working-directory: 6x/aplicacao/aghu_jee/aghu-core
+        run: mvn clean install -DskipTests -Dmaven.javadoc.skip=true
 
       - name: Run CodeQL
         uses: github/codeql-action/analyze@v3
