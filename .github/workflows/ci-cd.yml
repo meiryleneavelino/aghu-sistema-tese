@@ -2,9 +2,9 @@ name: CodeQL Java
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
 
 jobs:
   analyze:
@@ -29,11 +29,11 @@ jobs:
         with:
           languages: java
 
-      # 🔥 AQUI ESTÁ A CORREÇÃO REAL
-      - name: Build (diretório correto)
-        working-directory: 6x/aplicacao/aghu_jee
+      # 🔥 BUILD REAL (módulo que compila)
+      - name: Build aghu-entidades
+        working-directory: 6x/aplicacao/aghu_jee/aghu-entidades
         run: |
-          mvn -B -fn \
+          mvn -B \
           -DskipTests \
           -Dmaven.test.skip=true \
           -Dcheckstyle.skip=true \
@@ -41,9 +41,9 @@ jobs:
           -Denforcer.skip=true \
           compile
 
-      - name: Debug (ver se gerou .class)
-        run: |
-          find . -name "*.class" | head -20
+      # (opcional mas recomendado)
+      - name: Debug classes
+        run: find . -name "*.class" | head -20
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
