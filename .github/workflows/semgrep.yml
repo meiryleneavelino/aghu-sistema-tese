@@ -1,4 +1,4 @@
-name: Semgrep Security Scan
+name: Semgrep Security + LGPD Scan
 
 on:
   push:
@@ -15,17 +15,89 @@ jobs:
       - name: Install Semgrep
         run: pip install semgrep
 
-      - name: Run Semgrep (generate JSON report)
+      - name: Create LGPD custom rules
         run: |
-          semgrep --config=p/security-audit \
-                  --json \
-                  --output=semgrep-report.json || true
+          mkdir -p .semgrep/rules
+          cat << 'EOF' > .semgrep/rules/lgpd.yml
+          rules:
 
-      - name: Convert to SARIF (GitHub format)
+            # 🚨 1. Vazamento de dados sensíveis em logs
+            - id: lgpd-log-dados-sensiveis
+              languages: [java]
+              severity: ERROR
+              message: "Possível vazamento de dados sensíveis em logs (LGPD)"
+              patterns:
+                - pattern: log.$LEVEL(... + $VAR + ...)
+                - pattern-regex: "(cpf|paciente|prontuario|diagnostico|senha)"
+
+            # 🚨 2. Uso de criptografia fraca (MD5)
+            - id: lgpd-crypto-fraca
+              languages: [java]
+              severity: ERROR
+              message: "Uso de criptografia fraca (MD5) - não conforme LGPD"
+              pattern: MessageDigest.getInstance("MD5")
+
+            # 🚨 3. Dados sensíveis em texto claro
+            - id: lgpd-dados-texto-claro
+              languages: [java]
+              severity: WARNING
+              message: "Possível dado sensível sem criptografia"
+              pattern-regex: "String (senha|cpf|paciente|prontuario)"
+
+            # 🚨 4. Cookie inseguro (sem HttpOnly/Secure)
+            - id: lgpd-cookie-inseguro
+              languages: [java]
+              severity: ERROR
+              message: "Cookie sem proteção (HttpOnly/Secure)"
+              patterns:
+                - pattern: response.addCookie($C)
+                - pattern-not: $C.setHttpOnly(true)
+
+            # 🚨 5. Comunicação insegura (HTTP)
+            - id: lgpd-http-inseguro
+              languages: [java]
+              severity: ERROR
+              message: "Uso de HTTP inseguro - risco LGPD"
+              pattern-regex: "http://"
+
+            # 🚨 6. LDAP Injection (acesso indevido a dados)
+            - id: lgpd-ldap-injection
+              languages: [java]
+              severity: ERROR
+              message: "Possível LDAP Injection - risco LGPD"
+              pattern: ctx.search(... + $VAR + ...)
+
+            # 🚨 7. Deserialização insegura
+            - id: lgpd-deserializacao
+              languages: [java]
+              severity: ERROR
+              message: "Deserialização insegura pode comprometer dados pessoais"
+              pattern: new ObjectInputStream(...)
+
+            # 🚨 8. Possível XSS (exposição indireta)
+            - id: lgpd-xss
+              languages: [generic]
+              severity: WARNING
+              message: "Possível XSS - pode expor dados pessoais"
+              pattern-regex: "href=\"{{.*}}\""
+
+          EOF
+
+      - name: Run Semgrep (SAST + LGPD)
         run: |
-          semgrep --config=p/security-audit \
-                  --sarif \
-                  --output=semgrep-report.sarif || true
+          semgrep \
+            --config=p/security-audit \
+            --config=.semgrep/rules/lgpd.yml \
+            --json \
+            --output=semgrep-report.json || true
+
+      - name: Convert to SARIF
+        run: |
+          semgrep \
+            --config=p/security-audit \
+            --config=.semgrep/rules/lgpd.yml \
+            --sarif \
+            --output=semgrep-report.sarif || true
 
       - name: Upload SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
