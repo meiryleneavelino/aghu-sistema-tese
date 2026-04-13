@@ -2,9 +2,9 @@ name: CodeQL Java
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
 
 jobs:
   analyze:
@@ -29,8 +29,9 @@ jobs:
         with:
           languages: java
 
-      # 🔥 BUILD CONTROLADO (não quebra pipeline)
-      - name: Build (tolerante a erro)
+      # 🔥 AQUI ESTÁ A CORREÇÃO REAL
+      - name: Build (diretório correto)
+        working-directory: 6x/aplicacao/aghu_jee
         run: |
           mvn -B -fn \
           -DskipTests \
@@ -39,6 +40,10 @@ jobs:
           -Dpmd.skip=true \
           -Denforcer.skip=true \
           compile
+
+      - name: Debug (ver se gerou .class)
+        run: |
+          find . -name "*.class" | head -20
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
