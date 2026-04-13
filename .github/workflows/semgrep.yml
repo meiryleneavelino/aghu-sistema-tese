@@ -6,14 +6,34 @@ on:
 
 jobs:
   semgrep:
-    name: Run Semgrep
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout do código
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Run Semgrep
-        uses: returntocorp/semgrep-action@v1
+      - name: Install Semgrep
+        run: pip install semgrep
+
+      - name: Run Semgrep (generate JSON report)
+        run: |
+          semgrep --config=p/security-audit \
+                  --json \
+                  --output=semgrep-report.json || true
+
+      - name: Convert to SARIF (GitHub format)
+        run: |
+          semgrep --config=p/security-audit \
+                  --sarif \
+                  --output=semgrep-report.sarif || true
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          config: "p/security-audit"
+          sarif_file: semgrep-report.sarif
+
+      - name: Upload JSON report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep-report.json
